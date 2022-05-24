@@ -1,7 +1,8 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Feedback, ContactType } from '../shared/feedback';
-import { flyInOut } from '../animations/app.animation';
+import { flyInOut, expand } from '../animations/app.animation';
+import { FeedbackService } from '../services/feedback.service';
 
 @Component({
   selector: 'app-contact',
@@ -12,15 +13,19 @@ import { flyInOut } from '../animations/app.animation';
     'style': 'display: block;'
   },
   animations: [
-    flyInOut()
+    flyInOut(),
+    expand()
   ]
 })
 export class ContactComponent implements OnInit {
 
   feedbackForm!: FormGroup;
   feedback!: Feedback;
+  submittedFeedback!: Feedback;
   contactType = ContactType;
   @ViewChild('fform') feedbackFormDirective: any;
+  errMessage!: string;
+  submitting: boolean = false;
 
   formErrors: any = {
     'firstname': '',
@@ -50,7 +55,8 @@ export class ContactComponent implements OnInit {
     }
   };
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder,
+    private feedbackService: FeedbackService) {
     this.createForm();
    }
 
@@ -77,6 +83,7 @@ export class ContactComponent implements OnInit {
   onSubmit() {
     this.feedback = this.feedbackForm.value;
     console.log(this.feedback);
+    this.feedbackFormDirective.resetForm();
     this.feedbackForm.reset({
       firstname: '',
       lastname: '',
@@ -86,7 +93,23 @@ export class ContactComponent implements OnInit {
       contacttype: 'None',
       message: ''
     });
-    this.feedbackFormDirective.resetForm();
+    this.submitting = true;
+    this.feedbackService.submitFeedback(this.feedback)
+      .subscribe(feedback => {
+        this.submitting = false;
+        this.feedback = null;
+        this.submittedFeedback = feedback;
+        this.errMessage = null;
+        setTimeout(() => { this.submittedFeedback = null }, 5000);
+      },
+      errmsg => {
+        this.submitting = false;
+        this.feedback = null;
+        this.submittedFeedback = null;
+        this.errMessage = <any>errmsg;
+        setTimeout(() => { this.errMessage = null }, 5000);
+      }
+    );
   }
 
   onValueChanged(data?: any) {

@@ -140,6 +140,7 @@ export class DishdetailComponent implements OnInit {
         this.dish = null;
         this.dishcopy = null;
         this.errMessage = <any>errmsg;
-      });
+      }
+    );
   }
 }
